@@ -12,7 +12,7 @@ const randomOfWidth = view => randomSizeOf(view.getCanvasWidth());
 
 const randomOfHeight = view => randomSizeOf(view.getCanvasHeight());
 
-const testImage = args => view.Image({...args, url: 'hero@2x.jpg', top: randomOfHeight(view), left: randomOfWidth(view)});
+const testImage = (view, args) => view.Image({...args, url: 'hero@2x.jpg', top: randomOfHeight(view), left: randomOfWidth(view)});
 
 const testText = view => view.Text(genId(), {fill: randomColor(), top: randomOfHeight(view), left: randomOfWidth(view)});
 
