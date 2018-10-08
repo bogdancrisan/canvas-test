@@ -1,6 +1,6 @@
 const IMAGES = 1;
 
-const IMAGE_URL = '4kx3k.JPG';
+const IMAGE_URL = './4kx3k.JPG';
 
 const TEXTS = 5;
 
