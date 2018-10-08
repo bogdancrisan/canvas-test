@@ -43,6 +43,16 @@ const generateElements = (num, fn) => {
   return texts;
 }
 
+function createDownloadLink(src, name) {
+  const a = document.createElement('a');
+  
+  a.href = src;
+  a.textContent = name;
+  a.download = name;
+  
+  document.body.appendChild(a);
+}
+
 
 
 window.onload = function() {
@@ -50,8 +60,10 @@ window.onload = function() {
 
   const canvas = document.querySelector('#canvas');
 
-  canvas.setAttribute('width', CANVAS_WIDTH);
-  canvas.setAttribute('height', CANVAS_HEIGHT);
+  // canvas.setAttribute('width', CANVAS_WIDTH);
+  // canvas.setAttribute('height', CANVAS_HEIGHT);
+
+  // canvas.style.webkitTransform = 'scale(0.2)';
 
   view.init('canvas');
 
@@ -61,6 +73,8 @@ window.onload = function() {
     view.addElements(generateElements(RECTS, testRect.bind(null, view)));
     view.addElements(generateElements(TEXTS, testText.bind(null, view)));
     view.render();
+
+    createDownloadLink(view.toDataURL(), 'save')
     console.log(view.toJSON());
   })
 }
