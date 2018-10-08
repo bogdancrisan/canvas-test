@@ -1,5 +1,4 @@
-// import { fabric } from 'fabric';
-// import U from '../utils';
+
 /**
  * Manages a canvas using fabric.js
  */
@@ -202,5 +201,3 @@ View.zoomOut = function(amount) {
 View.removeAll = function() {
   this.canvas.forEachObject(el => this.canvas.remove(el))
 }
-
-// export default View;

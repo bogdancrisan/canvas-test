@@ -88,5 +88,3 @@ U.getBrowserWidth = () => (window.innerWidth || document.documentElement.clientW
  * Random 16 characters long number id
  */
 U.genId = () => Math.random().toString().slice(2);
-
-// export default U;

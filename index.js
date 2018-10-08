@@ -1,3 +1,14 @@
+const IMAGES = 1;
+
+const IMAGE_URL = '4kx3k.jpg';
+
+const TEXTS = 5;
+
+const RECTS = 5;
+
+const CANVAS_WIDTH = 4000;
+
+const CANVAS_HEIGHT = 3000;
 
 
 const genId = () => Math.random().toString().slice(2);
@@ -12,7 +23,7 @@ const randomOfWidth = view => randomSizeOf(view.getCanvasWidth());
 
 const randomOfHeight = view => randomSizeOf(view.getCanvasHeight());
 
-const testImage = (view, args) => view.Image({...args, url: 'hero@2x.jpg', top: randomOfHeight(view), left: randomOfWidth(view)});
+const testImage = (view, args) => view.Image({...args, url: IMAGE_URL});//, top: randomOfHeight(view), left: randomOfWidth(view)});
 
 const testText = view => view.Text(genId(), {fill: randomColor(), top: randomOfHeight(view), left: randomOfWidth(view)});
 
@@ -32,15 +43,6 @@ const generateElements = (num, fn) => {
   return texts;
 }
 
-function createLink(src, name) {
-  const a = document.createElement('a');
-  
-  a.href = src;
-  a.textContent = name;
-  a.download = name;
-  
-  document.body.appendChild(a);
-}
 
 
 window.onload = function() {
@@ -48,18 +50,17 @@ window.onload = function() {
 
   const canvas = document.querySelector('#canvas');
 
-  canvas.setAttribute('width', 12000);
-  canvas.setAttribute('height', 12000);
+  canvas.setAttribute('width', CANVAS_WIDTH);
+  canvas.setAttribute('height', CANVAS_HEIGHT);
 
   view.init('canvas');
 
-  Promise.all(generateElements(4, testImage.bind(null, view)))
-  .then((images) => {
-    view.addElements(generateElements(100, testRect.bind(null, view)));
-    view.addElements(generateElements(100, testText.bind(null, view)));
+  Promise.all(generateElements(IMAGES, testImage.bind(null, view)))
+  .then(images => {
     view.addElements(images);
+    view.addElements(generateElements(RECTS, testRect.bind(null, view)));
+    view.addElements(generateElements(TEXTS, testText.bind(null, view)));
     view.render();
     console.log(view.toJSON());
   })
-  
 }
