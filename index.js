@@ -114,8 +114,6 @@ window.onload = function() {
     view.addElements(generateElements(RECTS, testRect.bind(null, view)));
     view.addElements(generateElements(TEXTS, testText.bind(null, view)));
     view.render();
-
-    console.log('canv objects:', view.getCanvasObjects());
   })
 }
 
@@ -135,15 +133,12 @@ function exportAs2(type, width, height, view) {
   const div = document.createElement('div');
   const id = 'save-div';
   div.id = id;
-  // div.width = width;
-  // div.height = height;
   document.body.appendChild(div);
 
   const saveView = Object.create(View);
   saveView.init(id, width, height);
 
   const canvObjects = view.getCanvasObjects();
-  console.log('before conversion', canvObjects)
 
   //clone elements
   Promise.all(canvObjects.map(obj => View.clone(obj)))
@@ -154,7 +149,6 @@ function exportAs2(type, width, height, view) {
       view.convertPixelSizesToPercentages(el);      
       saveView.convertPercentSizesToPixels(el);
     });
-    console.log('after conversion', clones)
     return clones;
   })
   // create new unscaled images
@@ -174,74 +168,3 @@ function exportAs2(type, width, height, view) {
 }
 
 const findInImageCache = src => imagesCache.find(img => img.src.endsWith(src));
-
-
-
-
-// function exportAs(type, width, height, view) {
-//   const canvas = document.createElement('canvas');
-//   const canvasId = 'save-canvas';
-//   canvas.id = canvasId;
-//   canvas.width = width;
-//   canvas.height = height;
-//   document.body.appendChild(canvas);
-//   const ctx = canvas.getContext('2d');
-//   ctx.textBaseline = 'top';
-
-//   const canvObjects = view.canvas.getCanvasObjects();
-
-//   let oldImages = null;
-
-//   Promise.all(canvObjects.map(obj => view.clone(obj)))
-//   //clone elements
-//   .then(clones => {
-//     oldImages = clones.filter(o => o.type === 'image');
-//     return Promise.all(clones.map(obj => (obj.type === 'image' ? view.clone(findInImageCache(obj.src)) : obj)));
-//   })
-//   .then(clones => {
-
-//     //update clone sizes relative to the exported png size
-//     clones.forEach(el => {
-//       let currPercentages;
-//       if (el.className === 'Image') {
-//         currPercentages = select(PERCENTAGE_PROPS)(oldImages.find(img => img.getAttrs().src === el.getAttrs().src));
-//       }
-//       else {
-//         currPercentages = convertPixelSizesToPercentages(el.attrs, view.getCanvasWidth(), view.getCanvasHeight());
-//       }
-//       overwritePropsIfDefined(el, convertPercentSizesToPixels(currPercentages, width, height));
-//     });
-//     console.log('after conversion', clones)
-//   //   return clones;
-//   // })
-//   // .then(clones => {
-//   //   Promise.all(clones.map(el => cloneFabricObjAsImg(el)))
-//   // })
-//   // .then(clones => {
-//     // console.log('as images', clones)
-//     //render elements
-//     clones.forEach(el => {
-//       if (el.type === 'image') {
-//         const image = new Image();
-//         image.src = el.src;
-//         ctx.drawImage(image, el.left, el.top);
-//         return;
-//       }
-//       if (el.type === 'rect') {
-//         ctx.fillStyle = el.fill;
-//         ctx.fillRect(el.left, el.top, el.width, el.height);
-//         return;
-//       }
-//       if (el.type === 'i-text') {
-//         ctx.fillStyle = el.fill;
-//         ctx.font = `${el.fontSize}px ${el.fontFamily}`;
-//         ctx.fillText(el.text, el.left, el.top);
-//         return;
-//       }
-//     });
-
-//     //download png and remove canvas from DOM
-//     download(canvas.toDataURL(), 'export');
-//     document.body.removeChild(canvas);
-//   });
-// }
