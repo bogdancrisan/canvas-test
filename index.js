@@ -6,6 +6,10 @@ const TEXTS = 5;
 
 const RECTS = 5;
 
+const CANVAS_WIDTH = 800;
+
+const CANVAS_HEIGHT = 600;
+
 const EXPORT_WIDTH = 4000;
 
 const EXPORT_HEIGHT = 3000;
@@ -20,71 +24,50 @@ const COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
 
 const randomColor = () => COLORS[randomSizeOf(COLORS.length)];
 
-const fromPercent = (percent, num) => Math.floor((percent / 100) * num);
-
-const toPercent = (val1, val2) => Math.floor((val1 / val2) * 100);
-
 const randomPercentage = () => randomSizeOf(100);
 
-const PERCENTAGE_PROPS = ['ptop', 'pleft', 'pwidth', 'pheight'];
+const PERCENTAGE_PROPS = ['px', 'px', 'pwidth', 'pheight'];
 
 const randomPercentSizes = () => ({
   pwidth: randomPercentage(),
   pheight: randomPercentage(),
-  ptop: randomPercentage(),
-  pleft: randomPercentage(),
+  py: randomPercentage(),
+  px: randomPercentage(),
   pfontSize: randomPercentage(),
-});
-
-const convertPercentSizesToPixels = (sizes, view) => ({
-  width: (sizes.pwidth && fromPercent(sizes.pwidth, view.getCanvasWidth())),
-  height: (sizes.pheight && fromPercent(sizes.pheight, view.getCanvasHeight())),
-  top: (sizes.ptop && fromPercent(sizes.ptop, view.getCanvasHeight())),
-  left: (sizes.pleft && fromPercent(sizes.pleft, view.getCanvasWidth())),
-  fontSize: (sizes.pfontSize && fromPercent(sizes.pfontSize, view.getCanvasHeight())),
-});
-
-const convertPixelSizesToPercentages = (sizes, view) => ({
-  pwidth: (sizes.width && toPercent(sizes.width, view.getCanvasWidth())),
-  pheight: (sizes.height && toPercent(sizes.height, view.getCanvasHeight())),
-  ptop: (sizes.top && toPercent(sizes.top, view.getCanvasHeight())),
-  pleft: (sizes.left && toPercent(sizes.left, view.getCanvasWidth())),
-  pfontSize: (sizes.fontSize && toPercent(sizes.fontSize, view.getCanvasHeight())),
 });
 
 const testImage = (view, img) => {
   const percentSizes = {
-    ptop: 0,
-    pleft: 0,
+    px: 0,
+    py: 0,
     pheight: 100,
     pwidth: 100
   };
-  const sizes = convertPercentSizesToPixels(percentSizes, view);
-  overWritePropsIfDefined(img, percentSizes);
-  view.formatImage(img, sizes);
+  view.setElemAttrs(img, percentSizes);
+  view.convertPercentSizesToPixels(img);
   return img;
 }
 
 const viewImage = (view, args) => view.Image(args);
 
 const testText = view => {
-  const percentSizes = randomPercentSizes();
-  const sizes = convertPercentSizesToPixels(percentSizes, view);
-  return view.Text(genId(), {
+  const text = view.Text(genId(), {
     fill: randomColor(),
-    ...percentSizes,
-    ...sizes
   });
+  view.setElemAttrs(text, U.select('pfontSize', 'px', 'py')(randomPercentSizes()));  
+  view.convertPercentSizesToPixels(text);
+  return text;
 };
 
 const testRect = view => {
-  const percentSizes = randomPercentSizes();
-  const sizes = convertPercentSizesToPixels(percentSizes, view);
-  return view.Rect({
-    fill: randomColor(),
-    ...percentSizes,
-    ...sizes
+  const rect = view.Rect({
+    fill: randomColor(),  
   });
+  const percentSizes = randomPercentSizes();
+  view.setElemAttrs(rect, percentSizes);
+  view.convertPercentSizesToPixels(rect);
+
+  return rect;
 };
 
 const generateElements = (num, fn) => {
@@ -95,7 +78,7 @@ const generateElements = (num, fn) => {
   return elements;
 }
 
-const overWritePropsIfDefined = (o, ...objs) => {
+const overwritePropsIfDefined = (o, ...objs) => {
   objs.forEach(obj =>
     Object.keys(obj).forEach(key => {
       if (obj[key] !== undefined) {
@@ -105,28 +88,34 @@ const overWritePropsIfDefined = (o, ...objs) => {
   );
 }
 
-const cloneFabricObj = obj => new Promise((res, rej) => {
-  obj.clone(clonedObj => res(clonedObj), PERCENTAGE_PROPS);
+const cloneCanvasObj = obj => obj.clone();
+
+const cloneFabricObjAsImg = obj => new Promise((res, rej) => {
+  obj.cloneAsImage(clonedObj => res(clonedObj), PERCENTAGE_PROPS);
 });
 
 window.onload = function() {
   const view = Object.create(View);
   
-  view.init('main-canvas');
+  view.init('konva-container', CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  document.querySelector('#save-btn').onclick = exportAs.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view);
+  // view.canvas.on('mouse:down', e => (console.log('x:', e.pointer.x, 'y:', e.pointer.y), console.log('texts', view.canvas.getObjects().filter(el => el.type === 'i-text'))));
+  view.onClick(e => (console.log(e), console.log(view.getCanvasObjects().filter(o => view.isText(o)))));
 
-  Promise.all(generateElements(IMAGES, viewImage.bind(null, view, {url: IMAGE_URL})))
+  document.querySelector('#save-btn').onclick = exportAs2.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view);
+
+  Promise.all(generateElements(IMAGES, viewImage.bind(null, view, {src: IMAGE_URL, height: CANVAS_HEIGHT, width: CANVAS_WIDTH})))
   .then(images => {
-    imagesCache = [...imagesCache, ...images];
-    return Promise.all(images.map(img => cloneFabricObj(img)));
+    imagesCache = images.map(img => img.getImage());
+    return Promise.all(images.map(img => view.clone(img)));
   })
   .then(clonedImgs => {
-    view.setBackgroundColor('grey');
     view.addElements(clonedImgs.map(img => testImage(view, img)));
     view.addElements(generateElements(RECTS, testRect.bind(null, view)));
     view.addElements(generateElements(TEXTS, testText.bind(null, view)));
     view.render();
+
+    console.log('canv objects:', view.getCanvasObjects());
   })
 }
 
@@ -142,54 +131,117 @@ function download(src, name) {
   document.body.removeChild(a);
 }
 
-function exportAs(type, width, height, view) {
-  const canvas = document.createElement('canvas');
-  const canvasId = 'save-canvas';
-  canvas.id = canvasId;
-  document.body.appendChild(canvas);
+function exportAs2(type, width, height, view) {
+  const div = document.createElement('div');
+  const id = 'save-div';
+  div.id = id;
+  // div.width = width;
+  // div.height = height;
+  document.body.appendChild(div);
 
   const saveView = Object.create(View);
-  saveView.init(canvasId);  
-  setCanvasDimensions(saveView, width, height);
+  saveView.init(id, width, height);
 
-  const canvObjects = view.canvas.getObjects();
+  const canvObjects = view.getCanvasObjects();
+  console.log('before conversion', canvObjects)
 
-  let oldImages = null;
-
-  Promise.all(canvObjects.map(obj => cloneFabricObj(obj)))
+  //clone elements
+  Promise.all(canvObjects.map(obj => View.clone(obj)))
   .then(clones => {
-    oldImages = clones.filter(o => o.type === 'image');
-    return Promise.all(clones.map(obj => (obj.type === 'image' ? cloneFabricObj(findInImageCache(obj.src)) : obj)));
-  })
-  .then(clones => {
+    
+    //update clone sizes relative to the exported png size
     clones.forEach(el => {
-      let currPercentages;
-      if (el.type === 'image') {
-        currPercentages = select(PERCENTAGE_PROPS)(oldImages.find(img => img.src === el.src));
-      }
-      else {
-        currPercentages = convertPixelSizesToPercentages(el, view);
-      }
-      overWritePropsIfDefined(el, convertPercentSizesToPixels(currPercentages, saveView));
+      view.convertPixelSizesToPercentages(el);      
+      saveView.convertPercentSizesToPixels(el);
     });
-
+    console.log('after conversion', clones)
     return clones;
   })
+  // create new unscaled images
   .then(clones => {
+    return Promise.all(clones.map(obj => (View.isImage(obj) ? saveView.fromImage(View.getElemAttrs(obj), findInImageCache(obj.getImage().src)) : obj)));
+  })
+  .then(clones => {
+    //render elements
     saveView.addElements(clones);
     saveView.render();
-    download(saveView.toDataURL({ format: type }), 'export');
-    saveView.canvas.dispose();
-    document.body.removeChild(canvas);
-  })
+
+    //download png and remove canvas from DOM
+    download(saveView.getCanvas().toDataURL(), 'export');
+    saveView.destroy();
+    document.body.removeChild(div);
+  });
 }
 
-function setCanvasDimensions(view, width, height) {
-  view.canvas.setDimensions({width, height});
-}
+const findInImageCache = src => imagesCache.find(img => img.src.endsWith(src));
 
-function findInImageCache(src) {
-  return imagesCache.find(img => img._originalElement.src === src);
-}
 
-const select = (...props) => obj => props.reduce((acc, prop) => ({ ...acc, [prop]: obj[prop]}), {});
+
+
+// function exportAs(type, width, height, view) {
+//   const canvas = document.createElement('canvas');
+//   const canvasId = 'save-canvas';
+//   canvas.id = canvasId;
+//   canvas.width = width;
+//   canvas.height = height;
+//   document.body.appendChild(canvas);
+//   const ctx = canvas.getContext('2d');
+//   ctx.textBaseline = 'top';
+
+//   const canvObjects = view.canvas.getCanvasObjects();
+
+//   let oldImages = null;
+
+//   Promise.all(canvObjects.map(obj => view.clone(obj)))
+//   //clone elements
+//   .then(clones => {
+//     oldImages = clones.filter(o => o.type === 'image');
+//     return Promise.all(clones.map(obj => (obj.type === 'image' ? view.clone(findInImageCache(obj.src)) : obj)));
+//   })
+//   .then(clones => {
+
+//     //update clone sizes relative to the exported png size
+//     clones.forEach(el => {
+//       let currPercentages;
+//       if (el.className === 'Image') {
+//         currPercentages = select(PERCENTAGE_PROPS)(oldImages.find(img => img.getAttrs().src === el.getAttrs().src));
+//       }
+//       else {
+//         currPercentages = convertPixelSizesToPercentages(el.attrs, view.getCanvasWidth(), view.getCanvasHeight());
+//       }
+//       overwritePropsIfDefined(el, convertPercentSizesToPixels(currPercentages, width, height));
+//     });
+//     console.log('after conversion', clones)
+//   //   return clones;
+//   // })
+//   // .then(clones => {
+//   //   Promise.all(clones.map(el => cloneFabricObjAsImg(el)))
+//   // })
+//   // .then(clones => {
+//     // console.log('as images', clones)
+//     //render elements
+//     clones.forEach(el => {
+//       if (el.type === 'image') {
+//         const image = new Image();
+//         image.src = el.src;
+//         ctx.drawImage(image, el.left, el.top);
+//         return;
+//       }
+//       if (el.type === 'rect') {
+//         ctx.fillStyle = el.fill;
+//         ctx.fillRect(el.left, el.top, el.width, el.height);
+//         return;
+//       }
+//       if (el.type === 'i-text') {
+//         ctx.fillStyle = el.fill;
+//         ctx.font = `${el.fontSize}px ${el.fontFamily}`;
+//         ctx.fillText(el.text, el.left, el.top);
+//         return;
+//       }
+//     });
+
+//     //download png and remove canvas from DOM
+//     download(canvas.toDataURL(), 'export');
+//     document.body.removeChild(canvas);
+//   });
+// }
