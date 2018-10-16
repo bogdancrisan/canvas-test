@@ -107,7 +107,7 @@ View.setElementsDraggable = function(els) {
 }
 
 View._transformerOnClick = function(el) {
-  el.on('mousedown.transformer touchstart.transformer touchmove.transformer', () => {
+  el.on('mousedown.transformer touchstart.transformer touchmove.transformer tap.transformer', () => {
     this._hideAllTransformers();
     this._toggleTransformerVisibility(this.getElemAttr(el, 'transformer'), true);
   });
