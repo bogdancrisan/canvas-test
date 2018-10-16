@@ -102,7 +102,7 @@ window.onload = function() {
   // view.canvas.on('mouse:down', e => (console.log('x:', e.pointer.x, 'y:', e.pointer.y), console.log('texts', view.canvas.getObjects().filter(el => el.type === 'i-text'))));
   // view.onClick(e => (console.log(e), console.log(view.getCanvasObjects().filter(o => view.isText(o)))));
 
-  document.querySelector('#save-btn').onclick = exportAs.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view);
+  document.querySelector('#save-btn').addEventListener('click', exportAs.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view));
 
   Promise.all(generateElements(IMAGES, viewImage.bind(null, view, {src: IMAGE_URL, height: CANVAS_HEIGHT, width: CANVAS_WIDTH})))
   .then(images => {
@@ -125,10 +125,8 @@ window.onload = function() {
 }
 
 function download(el, name) {
-
   var link = document.createElement("a");
   link.download = name;
-  // window.open(el.layer.toDataURL());
   el.layer.toCanvas().toBlob((blob) => {
     var url = window.URL.createObjectURL(blob, {type: 'image/png'}, name);
     link.href = url;
