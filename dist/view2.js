@@ -115,7 +115,7 @@ View.setElementsDraggable = function (els) {
 View._transformerOnClick = function (el) {
   var _this3 = this;
 
-  el.on('mousedown.transformer tap.transformer', function () {
+  el.on('mousedown.transformer tap.transformer touchstart.transformer', function () {
     _this3._hideAllTransformers();
     _this3._toggleTransformerVisibility(_this3.getElemAttr(el, 'transformer'), true);
   });
@@ -136,11 +136,15 @@ View._hideAllTransformers = function () {
 };
 
 View.TRANSFORMER_STROKE_COLOR = 'black';
+View.TRANSFORMER_STROKE_SIZE = 1;
 
 View.Transformer = function () {
   return new Konva.Transformer({
+    anchorSize: 30,
     anchorStroke: View.TRANSFORMER_STROKE_COLOR,
-    borderStroke: View.TRANSFORMER_STROKE_COLOR
+    anchorStrokeWidth: View.TRANSFORMER_STROKE_SIZE,
+    borderStroke: View.TRANSFORMER_STROKE_COLOR,
+    borderStrokeWidth: View.TRANSFORMER_STROKE_SIZE
   });
 };
 
