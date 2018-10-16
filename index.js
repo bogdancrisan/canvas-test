@@ -100,9 +100,9 @@ window.onload = function() {
   view.init('konva-container', CANVAS_WIDTH, CANVAS_HEIGHT);
 
   // view.canvas.on('mouse:down', e => (console.log('x:', e.pointer.x, 'y:', e.pointer.y), console.log('texts', view.canvas.getObjects().filter(el => el.type === 'i-text'))));
-  view.onClick(e => (console.log(e), console.log(view.getCanvasObjects().filter(o => view.isText(o)))));
+  // view.onClick(e => (console.log(e), console.log(view.getCanvasObjects().filter(o => view.isText(o)))));
 
-  document.querySelector('#save-btn').onclick = exportAs2.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view);
+  document.querySelector('#save-btn').onclick = exportAs.bind(null, 'png', EXPORT_WIDTH, EXPORT_HEIGHT, view);
 
   Promise.all(generateElements(IMAGES, viewImage.bind(null, view, {src: IMAGE_URL, height: CANVAS_HEIGHT, width: CANVAS_WIDTH})))
   .then(images => {
@@ -113,6 +113,13 @@ window.onload = function() {
     view.addElements(clonedImgs.map(img => testImage(view, img)));
     view.addElements(generateElements(RECTS, testRect.bind(null, view)));
     view.addElements(generateElements(TEXTS, testText.bind(null, view)));
+    view.render();
+
+    const canvObjects = view.getCanvasObjects();
+    view.setTransformerOnElements(canvObjects);
+    view.setElementsDraggable(canvObjects);
+
+    console.log(canvObjects);
     view.render();
   })
 }
@@ -129,7 +136,7 @@ function download(src, name) {
   document.body.removeChild(a);
 }
 
-function exportAs2(type, width, height, view) {
+function exportAs(type, width, height, view) {
   const div = document.createElement('div');
   const id = 'save-div';
   div.id = id;
@@ -138,29 +145,30 @@ function exportAs2(type, width, height, view) {
   const saveView = Object.create(View);
   saveView.init(id, width, height);
 
-  const canvObjects = view.getCanvasObjects();
+  const exportCanvObjects = view.getCanvasObjects().filter(U.neg(view.isTransformer.bind(view)));;
 
-  //clone elements
-  Promise.all(canvObjects.map(obj => View.clone(obj)))
+  // clone elements
+  Promise.all(exportCanvObjects.map(obj => View.clone(obj)))
   .then(clones => {
     
-    //update clone sizes relative to the exported png size
+    // update clone sizes relative to the exported png size
     clones.forEach(el => {
       view.convertPixelSizesToPercentages(el);      
       saveView.convertPercentSizesToPixels(el);
     });
+
     return clones;
   })
   // create new unscaled images
   .then(clones => {
-    return Promise.all(clones.map(obj => (View.isImage(obj) ? saveView.fromImage(View.getElemAttrs(obj), findInImageCache(obj.getImage().src)) : obj)));
+    return Promise.all(clones.map(obj => (View.isImage(obj) ? saveView.fromImage(findInImageCache(obj.getImage().src, View.getElemAttrs(obj))) : obj)));
   })
   .then(clones => {
-    //render elements
+    // render elements
     saveView.addElements(clones);
     saveView.render();
 
-    //download png and remove canvas from DOM
+    // download png and remove canvas from DOM
     download(saveView.getCanvas().toDataURL(), 'export');
     saveView.destroy();
     document.body.removeChild(div);

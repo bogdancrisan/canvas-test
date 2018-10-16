@@ -63,6 +63,8 @@ U.replace = (key, value, existingArr, newElements) => [ ...U.selectWithout(key, 
 
 U.not = obj => !obj;
 
+U.neg = fn => U.compose(U.not, fn);
+
 U.isPromise = obj => !!obj.then;
 
 /**

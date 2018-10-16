@@ -4,6 +4,7 @@
 const View = {};
 
 
+
 View.init = function(containerId, width, height) {
   this.stage = new Konva.Stage({
     container: containerId,
@@ -13,6 +14,8 @@ View.init = function(containerId, width, height) {
 
   this.layer = new Konva.Layer();
   this.stage.add(this.layer);
+
+  this.layer.on('click', this.detachTransformer.bind(this));
 }
 
 View.getCanvasWidth = function() {
@@ -44,18 +47,22 @@ View.destroy = function() {
 }
 
 View.isImage = function(el) {
-  return el.getClassName() === 'Image';
+  return this._type(el) === 'Image';
 }
 
 View.isText = function(el) {
-  return el.getClassName() === 'Text';
+  return this._type(el) === 'Text';
 }
 
 View.isRect = function(el) {
-  return el.getClassName() === 'Rect';
+  return this._type(el) === 'Rect';
 }
 
-View.type = function(el) {
+View.isTransformer = function(el) {
+  return this._type(el) === 'Transformer';
+}
+
+View._type = function(el) {
   return el.getClassName();
 }
 
@@ -85,13 +92,76 @@ View.getElemAttrs = function(el) {
   return el.getAttrs();
 }
 
+View.setTransformerOnElements = function(els) {
+  els.forEach(el => {
+    const tr = this.Transformer();
+    this.add(tr);
+    this._attachTransformer(el, tr);
+    this._transformerOnClick(el);
+    this._toggleTransformerVisibility(tr, false);
+  });
+}
+
+View.setElementsDraggable = function(els) {
+  els.forEach(el => el.draggable(true));
+}
+
+View._transformerOnClick = function(el) {
+  el.on('mousedown.transformer tap.transformer', () => {
+    this._hideAllTransformers();
+    this._toggleTransformerVisibility(this.getElemAttr(el, 'transformer'), true);
+  });
+}
+
+View._hideAllTransformers = function() {
+  this.getCanvasObjects().forEach(el => {
+    const tr = this.getElemAttr(el, 'transformer');
+    
+    if (!tr) {
+      return;
+    }
+
+    this._toggleTransformerVisibility(tr, false);
+  });
+}
+
+View.Transformer = function() {
+  return new Konva.Transformer();
+}
+
+View._attachTransformer = function(el, transformer) {
+  transformer.attachTo(el);
+  el.setAttrs({
+    transformer,
+  });
+}
+
+View._toggleTransformerVisibility = function(transformer, flag) {
+  if (flag) {
+    transformer.show();
+  }
+  else {
+    transformer.hide();
+  }
+}
+
+View.detachTransformer = function() {
+  if (!this.transformer) {
+    return;
+  }
+  this.transformer.detach();
+  this.transformer = null;
+}
+
 View.Rect = function (args) {
-  const rect = new Konva.Rect(args);  
+  const rect = new Konva.Rect(args);
+
+  if (!args) {
+    return rect;
+  }
 
   args.left && rect.x(args.left);
   args.top && rect.y(args.top);
-
-  rect.draggable(true);
 
   return rect;
 }
@@ -101,12 +171,14 @@ View.Text = function(title, args) {
     ...args,
     text: title,
   });
+  
+  if (!args) {
+    return text;
+  }
 
   args.left && text.x(args.left);
   args.top && text.y(args.top);
-
-  text.draggable(true);
-
+  
   return text;
 } 
 
@@ -115,21 +187,26 @@ View.Image = function (args) {
   return new Promise(function(resolve, reject) {
     const imageObj = new Image();
     imageObj.onload = function() {
-      const image = _this.fromImage(args, imageObj);
-      image.draggable(true);
-      resolve(image);
+      resolve(_this.fromImage(imageObj, args));
     }
     imageObj.src = args.src;
   });
 }
 
-View.fromImage = function(args, image) {
-  return new Konva.Image({
+View.fromImage = function(image, args) {
+  const img = new Konva.Image({
     ...args,
-    x: args.left,
-    y: args.top,
     image
   });
+
+  if (!args) {
+    return img;
+  }
+
+  args.left && text.x(args.left);
+  args.top && text.y(args.top);
+
+  return img;
 }
 
 View.add = function(element) {
@@ -209,9 +286,8 @@ View.eventCallback = function (cb) {
   if (typeof cb !== 'function') {
     throw new Error('Expected function as callback.');
   }
-  const _this = this;
   return function () {
-    return cb(_this.toJSON());
+    return cb(this.toJSON.bind(this));
   }
 }
 
@@ -224,7 +300,7 @@ View.SIZE_PROPS = {
 View.convertPixelSizesToPercentages = function(el) {
   const cWidth = this.getCanvasWidth();
   const cHeight = this.getCanvasHeight();
-  const elementSizes = U.select(...View.SIZE_PROPS[this.type(el)])(this.getElemAttrs(el));
+  const elementSizes = U.select(...View.SIZE_PROPS[this._type(el)])(this.getElemAttrs(el));
   const percentages =  {
     pwidth: (elementSizes.width && U.toPercent(elementSizes.width, cWidth)),
     pheight: (elementSizes.height && U.toPercent(elementSizes.height, cHeight)),
@@ -244,7 +320,7 @@ View.PERCENTAGE_PROPS = {
 View.convertPercentSizesToPixels = function(el) {
   const cWidth = this.getCanvasWidth();
   const cHeight = this.getCanvasHeight();
-  const elementPercentages = U.select(...View.PERCENTAGE_PROPS[this.type(el)])(this.getElemAttrs(el));
+  const elementPercentages = U.select(...View.PERCENTAGE_PROPS[this._type(el)])(this.getElemAttrs(el));
 
   const sizes = {
     width: (elementPercentages.pwidth && U.fromPercent(elementPercentages.pwidth, cWidth)),
@@ -267,4 +343,4 @@ View.convertPercentSizesToPixels = function(el) {
  * |
  * |
  * \/ Y
- */
+*/
