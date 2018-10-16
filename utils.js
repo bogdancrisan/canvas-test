@@ -17,8 +17,6 @@ U.log = obj => (console.log(obj), obj);
 
 U.get = prop => obj => obj[prop];
 
-U.mmsToPixels = mms => Math.floor(mms * 3.7795275591);
-
 /**
  * get object values based on separate search terms to try and not depend on the specific object key name
  * @param  {...string} terms 
@@ -37,7 +35,6 @@ U.getPropertyInArray = (...terms) => arr => U.getProperty(...terms)(arr.find(ele
 
 U.isNumber = str => !Number.isNaN(parseInt(str));
 
-U.getPercent = (percent, num) => Math.floor((percent / 100) * num);
 
 /**
  * @param  {string} terms - check to see if these are included in the supplied string
@@ -50,7 +47,7 @@ U.contains = (...terms) => str => terms.filter(term => str.toLowerCase().include
  * @param {string} key 
  * @param {any} value 
  * @param {obj[]} arr 
- */
+*/
 U.selectWith = (key, value) => arr => arr.filter(el => U.getProperty(key)(el) === value);
 
 U.selectWithout = (key, value) => arr => arr.filter(el => U.getProperty(key)(el) !== value);
@@ -65,6 +62,8 @@ U.selectWithout = (key, value) => arr => arr.filter(el => U.getProperty(key)(el)
 U.replace = (key, value, existingArr, newElements) => [ ...U.selectWithout(key, value)(existingArr), ...newElements];
 
 U.not = obj => !obj;
+
+U.neg = fn => U.compose(U.not, fn);
 
 U.isPromise = obj => !!obj.then;
 
@@ -88,3 +87,11 @@ U.getBrowserWidth = () => (window.innerWidth || document.documentElement.clientW
  * Random 16 characters long number id
  */
 U.genId = () => Math.random().toString().slice(2);
+
+U.fromPercent = (percent, num) => ((percent / 100) * num);//Math.round((percent / 100) * num);
+
+U.toPercent = (val1, val2) => (val1 / val2) * 100;//Math.round((val1 / val2) * 100);
+
+U.filterUndefined = o => Object.keys(o).reduce((acc, key) => (o[key] !== undefined ? ({ ...acc, [key]: o[key]}) : acc), {});
+
+U.selectDefined = (...props) => U.compose(U.filterUndefined, U.select(...props));
