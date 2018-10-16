@@ -94,8 +94,8 @@ const cloneFabricObjAsImg = obj => new Promise((res, rej) => {
   obj.cloneAsImage(clonedObj => res(clonedObj), PERCENTAGE_PROPS);
 });
 
+const view = Object.create(View);
 window.onload = function() {
-  const view = Object.create(View);
   
   view.init('konva-container', CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -124,16 +124,19 @@ window.onload = function() {
   })
 }
 
-function download(src, name) {
-  const a = document.createElement('a');
-  
-  a.href = src;
-  a.textContent = name;
-  a.download = name;
-  
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function download(el, name) {
+
+  var link = document.createElement("a");
+  link.download = name;
+  // window.open(el.layer.toDataURL());
+  el.layer.toCanvas().toBlob((blob) => {
+    var url = window.URL.createObjectURL(blob, {type: 'image/png'}, name);
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  });
 }
 
 function exportAs(type, width, height, view) {
@@ -168,8 +171,8 @@ function exportAs(type, width, height, view) {
     saveView.addElements(clones);
     saveView.render();
 
-    // download png and remove canvas from DOM
-    download(saveView.getCanvas().toDataURL(), 'export');
+    // download png and remove canvas from DOM  
+    download(saveView, 'export');
     saveView.destroy();
     document.body.removeChild(div);
   });

@@ -15,7 +15,6 @@ View.init = function(containerId, width, height) {
   this.layer = new Konva.Layer();
   this.stage.add(this.layer);
 
-  this.layer.on('click', this.detachTransformer.bind(this));
 }
 
 View.getCanvasWidth = function() {
@@ -125,8 +124,13 @@ View._hideAllTransformers = function() {
   });
 }
 
+View.TRANSFORMER_STROKE_COLOR = 'black';
+
 View.Transformer = function() {
-  return new Konva.Transformer();
+  return new Konva.Transformer({
+    anchorStroke: View.TRANSFORMER_STROKE_COLOR,
+    borderStroke: View.TRANSFORMER_STROKE_COLOR
+  });
 }
 
 View._attachTransformer = function(el, transformer) {
